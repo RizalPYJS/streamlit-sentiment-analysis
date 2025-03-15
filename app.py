@@ -91,3 +91,13 @@ st.sidebar.write("1️⃣ Masukkan kode saham (misal: AAPL, TSLA, GOTO.JK).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita'.")
 st.sidebar.write("3️⃣ Lihat tabel berita dan grafik sentimen.")
 st.sidebar.write("4️⃣ Klik tautan berita untuk membaca lebih lanjut.")
+
+# Menampilkan Kredit dan LinkedIn
+st.markdown("---")  # Garis pemisah
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    st.write("🔹 **By Muh Rizal Ardiyansah**")
+
+with col2:
+    linkedln_url = "https://www.linkedin.com/in/muh-rizal-ardiyansah-941464248/"
+    st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True)
