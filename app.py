@@ -110,24 +110,54 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Distribusi Sentimen (Pie Chart)")
-            pie_fig = px.pie(df, names='kategori', title="Distribusi Sentimen",
-                             color='kategori', 
-                             color_discrete_map={'Positif':'green','Negatif':'red','Netral':'gray'})
+            pie_fig = px.pie(
+                df, 
+                names='kategori', 
+                title="Distribusi Sentimen",
+                color='kategori', 
+                color_discrete_map={
+                    'Positif': 'green',
+                    'Negatif': 'red',
+                    'Netral': 'gray'
+                }
+            )
             st.plotly_chart(pie_fig, use_container_width=True)
             
         with col2:
             st.subheader("Distribusi Sentimen (Bar Chart)")
             bar_counts = df['kategori'].value_counts().reset_index()
             bar_counts.columns = ['kategori', 'jumlah']
-            bar_fig = px.bar(bar_counts, x='kategori', y='jumlah', text='jumlah', title="Jumlah Berita per Kategori",
-                             color='kategori',
-                             color_discrete_map={'Positif':'green','Negatif':'red','Netral':'gray'})
+            bar_fig = px.bar(
+                bar_counts, 
+                x='kategori', 
+                y='jumlah', 
+                text='jumlah', 
+                title="Jumlah Berita per Kategori",
+                color='kategori',
+                color_discrete_map={
+                    'Positif': 'green',
+                    'Negatif': 'red',
+                    'Netral': 'gray'
+                }
+            )
             st.plotly_chart(bar_fig, use_container_width=True)
         
         # Histogram sebaran nilai sentimen
         st.subheader("Histogram Sebaran Nilai Sentimen")
-        hist_fig = px.histogram(df, x='sentiment', nbins=10, title="Sebaran Nilai Sentimen", color_discrete_sequence=['#636EFA'])
-        st.plotly_chart(hist_fig, use_container_width=True)
+        hist_fig = px.histogram(
+            df, 
+            x='sentiment', 
+            nbins=10, 
+            title="Sebaran Nilai Sentimen",
+            color_discrete_sequence=['#636EFA']
+        )
+        # Atur lebar dan tinggi agar tidak terlalu besar
+        hist_fig.update_layout(
+            width=700,   # sesuaikan kebutuhan
+            height=400
+        )
+        # gunakan use_container_width=False agar parameter width/height aktif
+        st.plotly_chart(hist_fig, use_container_width=False)
         
         # Jika aset crypto (mengandung USDT), tampilkan informasi harga
         if "USDT" in asset_ticker:
@@ -144,7 +174,13 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 df_prices = pd.DataFrame({'Waktu': timestamps, 'Harga': prices})
                 
                 st.subheader("📊 Grafik Pergerakan Harga Crypto")
-                line_fig = px.line(df_prices, x='Waktu', y='Harga', title=f'Pergerakan Harga {asset_ticker} Selama 10 Jam Terakhir', markers=True)
+                line_fig = px.line(
+                    df_prices, 
+                    x='Waktu', 
+                    y='Harga', 
+                    title=f'Pergerakan Harga {asset_ticker} Selama 10 Jam Terakhir',
+                    markers=True
+                )
                 line_fig.update_layout(xaxis_title="Waktu", yaxis_title="Harga (USD)")
                 st.plotly_chart(line_fig, use_container_width=True)
                 
@@ -163,6 +199,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                         'Close': close_price
                     })
                 df_ohlc = pd.DataFrame(ohlc_data)
+                
                 candle_fig = go.Figure(data=[go.Candlestick(
                     x=df_ohlc['Waktu'],
                     open=df_ohlc['Open'],
@@ -170,10 +207,14 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                     low=df_ohlc['Low'],
                     close=df_ohlc['Close']
                 )])
-                candle_fig.update_layout(title=f'Grafik Candlestick {asset_ticker} (Simulasi)',
-                                         xaxis_title="Waktu", yaxis_title="Harga (USD)")
+                candle_fig.update_layout(
+                    title=f'Grafik Candlestick {asset_ticker} (Simulasi)',
+                    xaxis_title="Waktu", 
+                    yaxis_title="Harga (USD)"
+                )
                 st.plotly_chart(candle_fig, use_container_width=True)
 
+# Sidebar
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
