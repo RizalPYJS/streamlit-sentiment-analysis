@@ -9,12 +9,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-# Memuat variabel lingkungan dari file .env
-load_dotenv()
-
-# Mengambil API key dari variabel lingkungan
-CMC_API_KEY = os.getenv("CMC_API_KEY")
-
 # Fungsi untuk mengambil berita dari Yahoo Finance
 def get_news_yahoo(ticker):
     url = f'https://finance.yahoo.com/quote/{ticker}/news?p={ticker}'

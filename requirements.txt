@@ -6,3 +6,4 @@ textblob
 matplotlib
 plotly
 numpy
+python-dotenv
