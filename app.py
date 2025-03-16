@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
@@ -6,6 +8,12 @@ from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+
+# Memuat variabel lingkungan dari file .env
+load_dotenv()
+
+# Mengambil API key dari variabel lingkungan
+CMC_API_KEY = os.getenv("CMC_API_KEY")
 
 # Fungsi untuk mengambil berita dari Yahoo Finance
 def get_news_yahoo(ticker):
@@ -136,11 +144,6 @@ st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan 
 
 # Input kode aset, termasuk opsi "IHSG" untuk indeks pasar Indonesia
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT, IHSG)", "AAPL").upper()
-
-# Jika aset yang dimasukkan merupakan kripto (misalnya mengandung 'USDT'), tampilkan input API key CoinMarketCap (opsional)
-cmc_api_key = None
-if "USDT" in asset_ticker:
-    cmc_api_key = st.text_input("Masukkan API key CoinMarketCap (opsional)", type="password")
 
 if st.button("🔍 Analisis Berita & Prediksi Harga"):
     # Ambil berita dari sumber-sumber yang relevan
@@ -280,27 +283,24 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 )
                 st.plotly_chart(candle_fig, use_container_width=True)
             
-            # Data dari CoinMarketCap (jika API key diinput)
-            if cmc_api_key:
-                # Misalnya, jika ticker adalah BTCUSDT, kita ekstrak simbol kripto dengan menghapus "USDT"
-                symbol_cmc = asset_ticker.replace("USDT", "")
-                cmc_data = get_coinmarketcap_data(symbol_cmc, cmc_api_key)
-                if cmc_data and "data" in cmc_data and symbol_cmc in cmc_data["data"]:
-                    crypto_data = cmc_data["data"][symbol_cmc]
-                    quote = crypto_data["quote"]["USD"]
-                    price_cmc = quote["price"]
-                    market_cap = quote["market_cap"]
-                    percent_change_24h = quote["percent_change_24h"]
-                    st.subheader("📊 Data dari CoinMarketCap")
-                    st.write(f"**Harga:** ${price_cmc:,.2f}")
-                    st.write(f"**Market Cap:** ${market_cap:,.2f}")
-                    st.write(f"**Perubahan 24 Jam:** {percent_change_24h:.2f}%")
-                else:
-                    st.warning("Gagal mengambil data dari CoinMarketCap. Pastikan API key dan ticker sudah benar.")
+            # Data dari CoinMarketCap
+            symbol_cmc = asset_ticker.replace("USDT", "")
+            cmc_data = get_coinmarketcap_data(symbol_cmc, CMC_API_KEY)
+            if cmc_data and "data" in cmc_data and symbol_cmc in cmc_data["data"]:
+                crypto_data = cmc_data["data"][symbol_cmc]
+                quote = crypto_data["quote"]["USD"]
+                price_cmc = quote["price"]
+                market_cap = quote["market_cap"]
+                percent_change_24h = quote["percent_change_24h"]
+                st.subheader("📊 Data dari CoinMarketCap")
+                st.write(f"**Harga:** ${price_cmc:,.2f}")
+                st.write(f"**Market Cap:** ${market_cap:,.2f}")
+                st.write(f"**Perubahan 24 Jam:** {percent_change_24h:.2f}%")
+            else:
+                st.warning("Gagal mengambil data dari CoinMarketCap. Pastikan ticker sudah benar.")
 
 # Sidebar untuk petunjuk penggunaan
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT, IHSG).")
-st.sidebar.write("2️⃣ Jika aset kripto, Anda bisa memasukkan API key CoinMarketCap (opsional).")
-st.sidebar.write("3️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
-st.sidebar.write("4️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
+st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
+st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
