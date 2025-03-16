@@ -75,6 +75,30 @@ def get_news_finviz(ticker):
     except Exception as e:
         return []
 
+# Fungsi untuk mengambil berita dari IHSG (misal dari situs IDX)
+def get_news_ihsg():
+    url = "https://www.idx.co.id/id/berita-pasar"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    try:
+         response = requests.get(url, headers=headers)
+         if response.status_code != 200:
+              return []
+         soup = BeautifulSoup(response.text, 'html.parser')
+         news_data = []
+         # Asumsi: setiap berita berada di dalam <div class="news-item">
+         articles = soup.find_all("div", class_="news-item")
+         for item in articles[:5]:
+             a_tag = item.find("a")
+             if a_tag:
+                 title = a_tag.text.strip()
+                 link = a_tag.get("href")
+                 if link and not link.startswith("http"):
+                     link = "https://www.idx.co.id" + link
+                 news_data.append({"title": title, "link": link, "source": "IHSG"})
+         return news_data
+    except Exception as e:
+         return []
+
 # Fungsi untuk mengambil harga crypto dari Binance API
 def get_crypto_price(symbol):
     url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
@@ -83,6 +107,21 @@ def get_crypto_price(symbol):
         if response.status_code != 200:
             return None
         return response.json()['price']
+    except Exception as e:
+        return None
+
+# Fungsi untuk mengambil data dari CoinMarketCap
+def get_coinmarketcap_data(symbol, api_key):
+    url = f"https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol={symbol}"
+    headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': api_key,
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return None
+        return response.json()
     except Exception as e:
         return None
 
@@ -95,21 +134,33 @@ st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen & Prediksi Saham & Crypto")
 st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
-asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT)", "AAPL").upper()
+# Input kode aset, termasuk opsi "IHSG" untuk indeks pasar Indonesia
+asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT, IHSG)", "AAPL").upper()
+
+# Jika aset yang dimasukkan merupakan kripto (misalnya mengandung 'USDT'), tampilkan input API key CoinMarketCap (opsional)
+cmc_api_key = None
+if "USDT" in asset_ticker:
+    cmc_api_key = st.text_input("Masukkan API key CoinMarketCap (opsional)", type="password")
 
 if st.button("🔍 Analisis Berita & Prediksi Harga"):
-    # Ambil berita dari ketiga sumber
+    # Ambil berita dari sumber-sumber yang relevan
     yahoo_news = get_news_yahoo(asset_ticker)
     reuters_news = get_news_reuters(asset_ticker)
     finviz_news = get_news_finviz(asset_ticker)
     
-    # Gabungkan hasil scraping berita
-    news_list = yahoo_news + reuters_news + finviz_news
+    # Jika aset adalah IHSG, tambahkan scraping berita dari IDX
+    if asset_ticker == "IHSG":
+        ihsg_news = get_news_ihsg()
+    else:
+        ihsg_news = []
+    
+    # Gabungkan semua berita
+    news_list = yahoo_news + reuters_news + finviz_news + ihsg_news
     
     if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
     else:
-        # Analisis sentimen dari masing-masing berita
+        # Analisis sentimen untuk setiap berita
         sentiments = []
         for news in news_list:
             sentiment_score = analyze_sentiment(news['title'])
@@ -134,7 +185,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 return 'Netral'
         df['kategori'] = df['sentiment'].apply(categorize_sentiment)
         
-        # Visualisasi distribusi sentimen menggunakan dua grafik (Pie dan Bar)
+        # Visualisasi distribusi sentimen dengan Pie Chart dan Bar Chart
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Distribusi Sentimen (Pie Chart)")
@@ -176,9 +227,10 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
         
         # Jika aset adalah crypto (mengandung USDT), tampilkan harga dan grafik pergerakan harga
         if "USDT" in asset_ticker:
+            # Data dari Binance
             price = get_crypto_price(asset_ticker)
             if price:
-                st.subheader(f"💰 Harga Saat Ini: {price} USD")
+                st.subheader(f"💰 Harga (Binance) Saat Ini: {price} USD")
                 
                 # Simulasi data harga crypto selama 10 jam terakhir
                 np.random.seed(42)
@@ -188,7 +240,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 timestamps = pd.date_range(end=pd.Timestamp.now(), periods=10, freq='H')
                 df_prices = pd.DataFrame({'Waktu': timestamps, 'Harga': prices})
                 
-                st.subheader("📊 Grafik Pergerakan Harga Crypto")
+                st.subheader("📊 Grafik Pergerakan Harga Crypto (Binance)")
                 line_fig = px.line(
                     df_prices, 
                     x='Waktu', 
@@ -227,9 +279,28 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                     yaxis_title="Harga (USD)"
                 )
                 st.plotly_chart(candle_fig, use_container_width=True)
+            
+            # Data dari CoinMarketCap (jika API key diinput)
+            if cmc_api_key:
+                # Misalnya, jika ticker adalah BTCUSDT, kita ekstrak simbol kripto dengan menghapus "USDT"
+                symbol_cmc = asset_ticker.replace("USDT", "")
+                cmc_data = get_coinmarketcap_data(symbol_cmc, cmc_api_key)
+                if cmc_data and "data" in cmc_data and symbol_cmc in cmc_data["data"]:
+                    crypto_data = cmc_data["data"][symbol_cmc]
+                    quote = crypto_data["quote"]["USD"]
+                    price_cmc = quote["price"]
+                    market_cap = quote["market_cap"]
+                    percent_change_24h = quote["percent_change_24h"]
+                    st.subheader("📊 Data dari CoinMarketCap")
+                    st.write(f"**Harga:** ${price_cmc:,.2f}")
+                    st.write(f"**Market Cap:** ${market_cap:,.2f}")
+                    st.write(f"**Perubahan 24 Jam:** {percent_change_24h:.2f}%")
+                else:
+                    st.warning("Gagal mengambil data dari CoinMarketCap. Pastikan API key dan ticker sudah benar.")
 
 # Sidebar untuk petunjuk penggunaan
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
-st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
-st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
-st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan harga crypto (jika berlaku).")
+st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT, IHSG).")
+st.sidebar.write("2️⃣ Jika aset kripto, Anda bisa memasukkan API key CoinMarketCap (opsional).")
+st.sidebar.write("3️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
+st.sidebar.write("4️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
