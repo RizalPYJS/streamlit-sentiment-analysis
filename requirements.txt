@@ -6,3 +6,4 @@ textblob
 matplotlib
 tensorflow
 praw
+python-dotenv
