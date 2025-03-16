@@ -305,6 +305,8 @@ st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT, IHS
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
 
+col1, col2 = st.columns([0.8, 0.2])
+
 with col1:
     st.write("🔹 **By Muh Rizal Ardiyansah**")
 
