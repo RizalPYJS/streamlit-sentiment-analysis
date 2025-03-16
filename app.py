@@ -51,6 +51,30 @@ def get_news_reuters(ticker):
     except Exception as e:
         return []
 
+# Fungsi untuk mengambil berita dari Finviz
+def get_news_finviz(ticker):
+    url = f'https://finviz.com/quote.ashx?t={ticker}'
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_table = soup.find('table', class_='fullview-news-outer')
+        if news_table is None:
+            return []
+        news_data = []
+        rows = news_table.findAll('tr')
+        for row in rows[:5]:
+            a_tag = row.find('a')
+            if a_tag:
+                title = a_tag.text.strip()
+                link = a_tag['href']
+                news_data.append({'title': title, 'link': link, 'source': 'Finviz'})
+        return news_data
+    except Exception as e:
+        return []
+
 # Fungsi untuk mengambil harga crypto dari Binance API
 def get_crypto_price(symbol):
     url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
@@ -62,7 +86,7 @@ def get_crypto_price(symbol):
     except Exception as e:
         return None
 
-# Fungsi analisis sentimen
+# Fungsi analisis sentimen menggunakan TextBlob
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
@@ -74,14 +98,18 @@ st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT)", "AAPL").upper()
 
 if st.button("🔍 Analisis Berita & Prediksi Harga"):
+    # Ambil berita dari ketiga sumber
     yahoo_news = get_news_yahoo(asset_ticker)
     reuters_news = get_news_reuters(asset_ticker)
-    news_list = yahoo_news + reuters_news
+    finviz_news = get_news_finviz(asset_ticker)
+    
+    # Gabungkan hasil scraping berita
+    news_list = yahoo_news + reuters_news + finviz_news
     
     if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
     else:
-        # Analisis sentimen setiap judul berita
+        # Analisis sentimen dari masing-masing berita
         sentiments = []
         for news in news_list:
             sentiment_score = analyze_sentiment(news['title'])
@@ -96,7 +124,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
         st.subheader(f"📊 Hasil Analisis Sentimen Berita untuk {asset_ticker}")
         st.dataframe(df, width=1000, height=300)
         
-        # Klasifikasi sentimen ke dalam kategori
+        # Fungsi untuk mengkategorikan nilai sentimen
         def categorize_sentiment(score):
             if score > 0.1:
                 return 'Positif'
@@ -106,7 +134,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 return 'Netral'
         df['kategori'] = df['sentiment'].apply(categorize_sentiment)
         
-        # Menampilkan grafik distribusi sentimen dengan layout kolom
+        # Visualisasi distribusi sentimen menggunakan dua grafik (Pie dan Bar)
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Distribusi Sentimen (Pie Chart)")
@@ -115,11 +143,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 names='kategori', 
                 title="Distribusi Sentimen",
                 color='kategori', 
-                color_discrete_map={
-                    'Positif': 'green',
-                    'Negatif': 'red',
-                    'Netral': 'gray'
-                }
+                color_discrete_map={'Positif': 'green', 'Negatif': 'red', 'Netral': 'gray'}
             )
             st.plotly_chart(pie_fig, use_container_width=True)
             
@@ -134,15 +158,11 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 text='jumlah', 
                 title="Jumlah Berita per Kategori",
                 color='kategori',
-                color_discrete_map={
-                    'Positif': 'green',
-                    'Negatif': 'red',
-                    'Netral': 'gray'
-                }
+                color_discrete_map={'Positif': 'green', 'Negatif': 'red', 'Netral': 'gray'}
             )
             st.plotly_chart(bar_fig, use_container_width=True)
         
-        # Histogram sebaran nilai sentimen
+        # Histogram sebaran nilai sentimen dengan pengaturan ukuran chart
         st.subheader("Histogram Sebaran Nilai Sentimen")
         hist_fig = px.histogram(
             df, 
@@ -151,15 +171,10 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
             title="Sebaran Nilai Sentimen",
             color_discrete_sequence=['#636EFA']
         )
-        # Atur lebar dan tinggi agar tidak terlalu besar
-        hist_fig.update_layout(
-            width=700,   # sesuaikan kebutuhan
-            height=400
-        )
-        # gunakan use_container_width=False agar parameter width/height aktif
+        hist_fig.update_layout(width=700, height=400)
         st.plotly_chart(hist_fig, use_container_width=False)
         
-        # Jika aset crypto (mengandung USDT), tampilkan informasi harga
+        # Jika aset adalah crypto (mengandung USDT), tampilkan harga dan grafik pergerakan harga
         if "USDT" in asset_ticker:
             price = get_crypto_price(asset_ticker)
             if price:
@@ -199,7 +214,6 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                         'Close': close_price
                     })
                 df_ohlc = pd.DataFrame(ohlc_data)
-                
                 candle_fig = go.Figure(data=[go.Candlestick(
                     x=df_ohlc['Waktu'],
                     open=df_ohlc['Open'],
@@ -214,8 +228,8 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
                 )
                 st.plotly_chart(candle_fig, use_container_width=True)
 
-# Sidebar
+# Sidebar untuk petunjuk penggunaan
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
-st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan harga crypto.")
+st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan harga crypto (jika berlaku).")
