@@ -1,9 +1,8 @@
 streamlit
-beautifulsoup4
 requests
+beautifulsoup4
 pandas
 textblob
 matplotlib
-tensorflow
-praw
-python-dotenv
+plotly
+numpy
