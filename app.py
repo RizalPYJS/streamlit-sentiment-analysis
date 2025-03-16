@@ -11,6 +11,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
+import praw
 
 # Fungsi untuk mengambil berita dari Yahoo Finance
 def get_news_yahoo(ticker):
@@ -75,25 +76,25 @@ def get_crypto_price_binance(symbol):
         return float(data['price'])
     return None
 
-# Fungsi untuk membuat dan melatih model LSTM
-def build_lstm_model(data):
-    scaler = MinMaxScaler(feature_range=(0,1))
-    scaled_data = scaler.fit_transform(data[['close']].values)
-    X, y = [], []
-    for i in range(10, len(scaled_data)):
-        X.append(scaled_data[i-10:i, 0])
-        y.append(scaled_data[i, 0])
-    X, y = np.array(X), np.array(y)
-    X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+# Fungsi untuk mengambil data dari Reddit
+def get_reddit_sentiment(ticker):
+    reddit = praw.Reddit(
+        client_id='your_client_id',
+        client_secret='your_client_secret',
+        user_agent='your_user_agent'
+    )
     
-    model = Sequential()
-    model.add(LSTM(units=50, return_sequences=True, input_shape=(X.shape[1], 1)))
-    model.add(LSTM(units=50, return_sequences=False))
-    model.add(Dense(units=25))
-    model.add(Dense(units=1))
-    model.compile(optimizer='adam', loss='mean_squared_error')
-    model.fit(X, y, epochs=5, batch_size=1, verbose=1)
-    return model, scaler
+    subreddit = reddit.subreddit("stocks")
+    posts = subreddit.search(ticker, limit=10)
+    sentiment_scores = []
+    reddit_data = []
+    
+    for post in posts:
+        sentiment = analyze_sentiment(post.title)
+        sentiment_scores.append(sentiment)
+        reddit_data.append({'title': post.title, 'sentiment': sentiment})
+    
+    return pd.DataFrame(reddit_data)
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen & Prediksi Saham & Crypto")
@@ -106,6 +107,7 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
     stock_data = get_stock_data(asset_ticker)
     crypto_price = get_crypto_price_binance(asset_ticker)
     fear_greed_value, fear_greed_label = get_fear_greed_index()
+    reddit_sentiment = get_reddit_sentiment(asset_ticker)
     
     if not yahoo_news:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
@@ -145,8 +147,13 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
     if crypto_price is not None:
         st.subheader("💰 Harga Crypto Saat Ini")
         st.write(f"Harga {asset_ticker}: ${crypto_price}")
+    
+    if not reddit_sentiment.empty:
+        st.subheader("📢 Analisis Sentimen Reddit")
+        st.dataframe(reddit_sentiment, width=1000, height=300)
 
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan indeks Fear & Greed.")
+
