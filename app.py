@@ -156,4 +156,3 @@ st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan indeks Fear & Greed.")
-
