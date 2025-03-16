@@ -304,3 +304,10 @@ st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT, IHSG).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
+
+with col1:
+    st.write("🔹 **By Muh Rizal Ardiyansah**")
+
+with col2:
+    linkedln_url = "https://www.linkedin.com/in/muh-rizal-ardiyansah-941464248/"
+    st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True)
