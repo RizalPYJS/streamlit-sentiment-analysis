@@ -11,7 +11,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
-import praw
 
 # Fungsi untuk mengambil berita dari Yahoo Finance
 def get_news_yahoo(ticker):
@@ -42,78 +41,43 @@ def get_news_yahoo(ticker):
     except Exception as e:
         return []
 
+# Fungsi untuk mengambil berita dari Google News
+def get_news_google(ticker, api_key):
+    url = f"https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}"
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return []
+        
+        news_list = response.json().get('articles', [])
+        
+        news_data = [{'title': news['title'], 'link': news['url'], 'source': 'Google News'} for news in news_list[:5]]
+        
+        return news_data
+    except Exception as e:
+        return []
+
 # Fungsi analisis sentimen
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
-
-# Fungsi untuk mengambil data saham dari Alpha Vantage
-def get_stock_data(ticker):
-    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={ticker}&interval=5min&apikey=demo'
-    response = requests.get(url)
-    data = response.json()
-    if 'Time Series (5min)' not in data:
-        return None
-    df = pd.DataFrame.from_dict(data['Time Series (5min)'], orient='index')
-    df = df.astype(float)
-    df = df.rename(columns={'1. open': 'open', '2. high': 'high', '3. low': 'low', '4. close': 'close', '5. volume': 'volume'})
-    return df
-
-# Fungsi untuk mengambil indeks Fear & Greed
-def get_fear_greed_index():
-    url = "https://api.alternative.me/fng/"
-    response = requests.get(url)
-    data = response.json()
-    if 'data' in data:
-        return data['data'][0]['value'], data['data'][0]['value_classification']
-    return None, None
-
-# Fungsi untuk mengambil harga crypto dari Binance
-def get_crypto_price_binance(symbol):
-    url = f'https://api.binance.com/api/v3/ticker/price?symbol={symbol}'
-    response = requests.get(url)
-    data = response.json()
-    if 'price' in data:
-        return float(data['price'])
-    return None
-
-# Fungsi untuk mengambil data dari Reddit
-def get_reddit_sentiment(ticker):
-    reddit = praw.Reddit(
-        client_id='your_client_id',
-        client_secret='your_client_secret',
-        user_agent='your_user_agent'
-    )
-    
-    subreddit = reddit.subreddit("stocks")
-    posts = subreddit.search(ticker, limit=10)
-    sentiment_scores = []
-    reddit_data = []
-    
-    for post in posts:
-        sentiment = analyze_sentiment(post.title)
-        sentiment_scores.append(sentiment)
-        reddit_data.append({'title': post.title, 'sentiment': sentiment})
-    
-    return pd.DataFrame(reddit_data)
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen & Prediksi Saham & Crypto")
 st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT)", "AAPL").upper()
+google_api_key = st.text_input("Masukkan API Key Google News", type="password")
 
 if st.button("🔍 Analisis Berita & Prediksi Harga"):
     yahoo_news = get_news_yahoo(asset_ticker)
-    stock_data = get_stock_data(asset_ticker)
-    crypto_price = get_crypto_price_binance(asset_ticker)
-    fear_greed_value, fear_greed_label = get_fear_greed_index()
-    reddit_sentiment = get_reddit_sentiment(asset_ticker)
+    google_news = get_news_google(asset_ticker, google_api_key) if google_api_key else []
+    news_list = yahoo_news + google_news
     
-    if not yahoo_news:
+    if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
     else:
         sentiments = []
-        for news in yahoo_news:
+        for news in news_list:
             sentiment_score = analyze_sentiment(news['title'])
             sentiments.append({'title': news['title'], 'sentiment': sentiment_score, 'link': news['link'], 'source': news['source']})
         
@@ -135,24 +99,9 @@ if st.button("🔍 Analisis Berita & Prediksi Harga"):
         plt.savefig(buf, format="png")
         buf.seek(0)
         st.image(buf)
-    
-    if fear_greed_value is not None:
-        st.subheader("🧠 Fear & Greed Index")
-        st.write(f"Indeks saat ini: {fear_greed_value} - {fear_greed_label}")
-    
-    if stock_data is not None:
-        st.subheader("📈 Data Harga Aset")
-        st.line_chart(stock_data['close'])
-    
-    if crypto_price is not None:
-        st.subheader("💰 Harga Crypto Saat Ini")
-        st.write(f"Harga {asset_ticker}: ${crypto_price}")
-    
-    if not reddit_sentiment.empty:
-        st.subheader("📢 Analisis Sentimen Reddit")
-        st.dataframe(reddit_sentiment, width=1000, height=300)
 
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
-st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
-st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan indeks Fear & Greed.")
+st.sidebar.write("2️⃣ Masukkan API Key Google News untuk data tambahan.")
+st.sidebar.write("3️⃣ Klik tombol '🔍 Analisis Berita & Prediksi Harga'.")
+st.sidebar.write("4️⃣ Lihat tabel berita dan grafik sentimen.")
