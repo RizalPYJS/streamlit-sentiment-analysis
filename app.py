@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-# 🔹 **Pindahkan `st.set_page_config` ke awal sebelum ada `st.` lainnya**
+# 🔹 **Pastikan st.set_page_config berada di baris paling awal**
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 
 load_dotenv()
@@ -95,33 +95,6 @@ def get_news_cnbc(ticker):
     except Exception as e:
         return []
 
-def get_news_cnbc(ticker):
-    url = f'https://www.cnbc.com/quotes/{ticker}'
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        news_data = []
-        articles = soup.find_all('div', class_='Card-titleContainer')
-
-        for item in articles:
-            headline = item.find('a')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = link['href']
-                news_data.append({'title': title, 'link': news_link, 'source': 'CNBC'})
-
-        return news_data[:5]
-    
-    except Exception as e:
-        return []
-
 def get_news_investing(ticker):
     url = f'https://www.investing.com/equities/{ticker.lower()}-news'
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -149,12 +122,13 @@ def get_news_investing(ticker):
     except Exception as e:
         return []
 
-import streamlit as st
-import pandas as pd
+def analyze_sentiment(text):
+    return TextBlob(text).sentiment.polarity
 
-st.title("📈 Analisis Sentimen Berita Saham")
+st.title("📈 Analisis Sentimen Saham & Crypto")
+st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
-asset_ticker = st.text_input("Masukkan Ticker Saham (Contoh: AAPL, TSLA)")
+asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
 if st.button("🔍 Analisis Berita Saham"):
     yahoo_news = get_news_yahoo(asset_ticker)
@@ -163,27 +137,6 @@ if st.button("🔍 Analisis Berita Saham"):
     investing_news = get_news_investing(asset_ticker)
 
     news_list = yahoo_news + marketwatch_news + cnbc_news + investing_news
-    
-    if not news_list:
-        st.warning(f"⚠ Tidak ada berita ditemukan untuk {asset_ticker}.")
-    else:
-        df = pd.DataFrame(news_list)
-        
-        st.subheader(f"📊 Hasil Analisis Sentimen Berita untuk {asset_ticker}")
-        st.dataframe(df, width=1000, height=300)
-
-def analyze_sentiment(text):
-    return TextBlob(text).sentiment.polarity
-
-st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
-st.title("📈 Analisis Sentimen Saham & Crypto")
-st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
-
-asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
-
-if st.button("🔍 Analisis Berita Saham"):
-    yahoo_news = get_news_yahoo(asset_ticker)
-    news_list = yahoo_news 
     
     if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
@@ -256,6 +209,7 @@ st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
 st.sidebar.write("Data Dari IHSG & Crypto masih sangat terbatas dikarenakan terbatas API")
+
 col1, col2 = st.columns([0.8, 0.2])
 
 with col1:
