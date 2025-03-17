@@ -2,16 +2,14 @@ import os
 from dotenv import load_dotenv
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 
 load_dotenv()
 
-# Fungsi untuk mengambil berita menggunakan NewsAPI
+
 def get_news_api(ticker, api_key):
     url = f'https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}'
     try:
@@ -31,36 +29,37 @@ def get_news_api(ticker, api_key):
     except Exception as e:
         return []
 
-# Fungsi untuk analisis sentimen menggunakan TextBlob
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
-# Fungsi untuk menyembunyikan teks di frontend (hanya ditampilkan di backend)
 def hide_frontend():
     st.markdown(
         "<style> .hidden-text { display: none; } </style>", unsafe_allow_html=True
     )
     st.markdown('<div class="hidden-text">Ini adalah teks yang disembunyikan di frontend tetapi terlihat di backend</div>', unsafe_allow_html=True)
 
-# Pengaturan halaman Streamlit
+
+def sentiment_response(sentiment):
+    if sentiment > 0.1:
+        return "🎉 Sentimen positif! Berita ini menunjukkan bahwa banyak orang merasa optimis tentang perkembangan terbaru. Bisa jadi ini pertanda baik untuk aset tersebut!"
+    elif sentiment < -0.1:
+        return "⚠️ Sentimen negatif. Banyak orang merasa khawatir atau pesimis tentang perkembangan terbaru. Anda mungkin ingin lebih berhati-hati sebelum membuat keputusan."
+    else:
+        return "🤔 Sentimen netral. Berita ini cenderung obyektif, tanpa ada pengaruh besar baik dari sisi positif maupun negatif. Tidak ada perubahan signifikan yang dapat diharapkan."
+
+
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen Saham & Crypto")
 st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
-# Pilih sumber berita (NewsAPI saja, Google News dihapus)
-news_source = "NewsAPI"
 
-# API key NewsAPI yang telah Anda berikan
 api_key = "e18b99df0d9c40098f96f149e3cab8b2"
 
 if st.button("🔍 Analisis Berita Saham"):
-    if news_source == "NewsAPI":
-        yahoo_news = get_news_api(asset_ticker, api_key)
-    else:
-        yahoo_news = []
-
+    yahoo_news = get_news_api(asset_ticker, api_key)
+    
     news_list = yahoo_news 
     
     if not news_list:
@@ -69,16 +68,14 @@ if st.button("🔍 Analisis Berita Saham"):
         sentiments = []
         for news in news_list:
             sentiment_score = analyze_sentiment(news['title'])
+            sentiment_explanation = sentiment_response(sentiment_score)
             sentiments.append({
                 'title': news['title'],
                 'sentiment': sentiment_score,
                 'link': news['link'],
-                'source': news['source']
+                'source': news['source'],
+                'sentiment_explanation': sentiment_explanation  # Menambahkan penjelasan dari chatbot
             })
-        
-        # Tampilkan data di backend (ini hanya terlihat di console/log backend)
-        backend_text = "Data berita dan analisis sentimen telah diproses."
-        st.text(backend_text)  # Data ini hanya untuk backend
         
         df = pd.DataFrame(sentiments)
         
@@ -134,7 +131,13 @@ if st.button("🔍 Analisis Berita Saham"):
         hist_fig.update_layout(width=700, height=400)
         st.plotly_chart(hist_fig, use_container_width=False)
 
-# Sidebar petunjuk penggunaan
+        
+        for index, row in df.iterrows():
+            st.write(f"**Berita:** {row['title']}")
+            st.write(f"**Sentimen:** {row['kategori']}")
+            st.write(f"**Penjelasan Chatbot:** {row['sentiment_explanation']}")
+
+
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
