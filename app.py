@@ -2,38 +2,13 @@ import os
 from dotenv import load_dotenv
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 from textblob import TextBlob
 import plotly.express as px
-import plotly.graph_objects as go
-import numpy as np
 
 load_dotenv()
 
-
-def get_news_google(ticker):
-    url = f'https://news.google.com/rss/search?q={ticker}'
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        
-        soup = BeautifulSoup(response.text, 'xml')  # Parsing XML untuk RSS feed
-        news_data = []
-        items = soup.find_all('item')
-        
-        for item in items:
-            title = item.find('title').text
-            link = item.find('link').text
-            news_data.append({'title': title, 'link': link, 'source': 'Google News'})
-        
-        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
-    
-    except Exception:
-        return []
+api_key = os.getenv('NEWSAPI_KEY')
 
 def get_news_api(ticker, api_key):
     url = f'https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}'
@@ -50,12 +25,13 @@ def get_news_api(ticker, api_key):
             link = article['url']
             news_data.append({'title': title, 'link': link, 'source': article['source']['name']})
         
-        return news_data[:20] if news_data else []  
+        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
     except Exception as e:
         return []
 
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
+
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen Saham & Crypto")
@@ -63,15 +39,11 @@ st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan 
 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
-news_source = st.selectbox("Pilih sumber berita", ("Google News", "NewsAPI"))
 
-
-api_key = "e18b99df0d9c40098f96f149e3cab8b2"
+news_source = "NewsAPI" 
 
 if st.button("🔍 Analisis Berita Saham"):
-    if news_source == "Google News":
-        yahoo_news = get_news_google(asset_ticker)
-    elif news_source == "NewsAPI":
+    if news_source == "NewsAPI":
         yahoo_news = get_news_api(asset_ticker, api_key)
     else:
         yahoo_news = []
@@ -147,8 +119,7 @@ if st.button("🔍 Analisis Berita Saham"):
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
-st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
-st.sidebar.write("Data Dari IHSG & Crypto masih sangat terbatas dikarenakan terbatas API")
+st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen")
 col1, col2 = st.columns([0.8, 0.2])
 
 with col1:
