@@ -41,94 +41,12 @@ def get_news_yahoo(ticker):
     except Exception:
         return []
 
-def get_news_marketwatch(ticker):
-    url = f'https://www.marketwatch.com/investing/stock/{ticker}/news'
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        news_data = []
-        articles = soup.find_all('div', class_='article__content')
-
-        for item in articles:
-            headline = item.find('h3')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = link['href']
-                news_data.append({'title': title, 'link': news_link, 'source': 'MarketWatch'})
-
-        return news_data[:5]
-    
-    except Exception as e:
-        return []
-
-def get_news_cnbc(ticker):
-    url = f'https://www.cnbc.com/quotes/{ticker}'
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        news_data = []
-        articles = soup.find_all('div', class_='Card-titleContainer')
-
-        for item in articles:
-            headline = item.find('a')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = link['href']
-                news_data.append({'title': title, 'link': news_link, 'source': 'CNBC'})
-
-        return news_data[:5]
-    
-    except Exception as e:
-        return []
-
-def get_news_investing(ticker):
-    url = f'https://www.investing.com/equities/{ticker.lower()}-news'
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return []
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        news_data = []
-        articles = soup.find_all('article')
-
-        for item in articles:
-            headline = item.find('a')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = f"https://www.investing.com{link['href']}"
-                news_data.append({'title': title, 'link': news_link, 'source': 'Investing.com'})
-
-        return news_data[:5]
-    
-    except Exception as e:
-        return []
-
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
-st.title("📈 Analisis Sentimen Saham & Crypto")
-st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
-
-asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
+st.title("📈 Analisis Sentimen Saham")
+st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru")
+asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, TSLA, AMZN)", "AAPL").upper()
 
 if st.button("🔍 Analisis Berita Saham"):
     yahoo_news = get_news_yahoo(asset_ticker)
