@@ -11,8 +11,8 @@ import numpy as np
 
 load_dotenv()
 
-def get_news_yahoo(ticker):
-    url = f'https://finance.yahoo.com/quote/{ticker}/news?p={ticker}'
+def get_news_google(ticker):
+    url = f'https://news.google.com/rss/search?q={ticker}'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
     
     try:
@@ -20,23 +20,20 @@ def get_news_yahoo(ticker):
         if response.status_code != 200:
             return []
         
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'xml')  # Parsing XML untuk RSS feed
         news_data = []
-        articles = soup.find_all('article')
+        items = soup.find_all('item')
         
-        for item in articles:
-            headline = item.find('h3')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = f"https://finance.yahoo.com{link['href']}"
-                news_data.append({'title': title, 'link': news_link, 'source': 'Yahoo Finance'})
+        for item in items:
+            title = item.find('title').text
+            link = item.find('link').text
+            news_data.append({'title': title, 'link': link, 'source': 'Google News'})
         
-        return news_data[:5] if news_data else []
+        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
     
     except Exception:
         return []
+
 
 def get_news_api(ticker, api_key):
     url = f'https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}'
@@ -57,9 +54,9 @@ def get_news_api(ticker, api_key):
     except Exception as e:
         return []
 
+
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
-
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen Saham & Crypto")
@@ -68,7 +65,8 @@ st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
 
-news_source = st.selectbox("Pilih sumber berita", ("BOT NEWS BETA", "BOT NEWS BETA 1"))
+news_source = st.selectbox("Pilih sumber berita", ("BOT TES 1 ", "BOT TES 2"))
+
 
 api_key = "e18b99df0d9c40098f96f149e3cab8b2"
 
