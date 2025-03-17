@@ -8,10 +8,7 @@ from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-
-# 🔹 **Pastikan st.set_page_config berada di baris paling awal**
-st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
-
+                                                                            
 load_dotenv()
 
 def get_news_yahoo(ticker):
@@ -44,12 +41,15 @@ def get_news_yahoo(ticker):
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
-st.title("📈 Analisis Sentimen Saham")
-st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru")
-asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, TSLA, AMZN)", "AAPL").upper()
+st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
+st.title("📈 Analisis Sentimen Saham & Crypto")
+st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
+
+asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
 if st.button("🔍 Analisis Berita Saham"):
     yahoo_news = get_news_yahoo(asset_ticker)
+    news_list = yahoo_news 
     
     if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
@@ -122,7 +122,6 @@ st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
 st.sidebar.write("Data Dari IHSG & Crypto masih sangat terbatas dikarenakan terbatas API")
-
 col1, col2 = st.columns([0.8, 0.2])
 
 with col1:
@@ -130,4 +129,4 @@ with col1:
 
 with col2:
     linkedln_url = "https://www.linkedin.com/in/muh-rizal-ardiyansah-941464248/"
-    st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True
