@@ -33,7 +33,7 @@ def get_news_yahoo(ticker):
                 news_link = f"https://finance.yahoo.com{link['href']}"
                 news_data.append({'title': title, 'link': news_link, 'source': 'Yahoo Finance'})
         
-        return news_data[:5] if news_data else []
+        return news_data[:20] if news_data else []
     
     except Exception:
         return []
