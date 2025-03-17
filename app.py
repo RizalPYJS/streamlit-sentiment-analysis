@@ -11,8 +11,9 @@ import numpy as np
 
 load_dotenv()
 
-def get_news_yahoo(ticker):
-    url = f'https://finance.yahoo.com/quote/{ticker}/news?p={ticker}'
+# Fungsi untuk mengambil berita dari Google News (RSS Feed)
+def get_news_google(ticker):
+    url = f'https://news.google.com/rss/search?q={ticker}'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
     
     try:
@@ -20,35 +21,67 @@ def get_news_yahoo(ticker):
         if response.status_code != 200:
             return []
         
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'xml')  # Parsing XML untuk RSS feed
         news_data = []
-        articles = soup.find_all('article')
+        items = soup.find_all('item')
         
-        for item in articles:
-            headline = item.find('h3')
-            link = item.find('a', href=True)
-            
-            if headline and link:
-                title = headline.text.strip()
-                news_link = f"https://finance.yahoo.com{link['href']}"
-                news_data.append({'title': title, 'link': news_link, 'source': 'Yahoo Finance'})
+        for item in items:
+            title = item.find('title').text
+            link = item.find('link').text
+            news_data.append({'title': title, 'link': link, 'source': 'Google News'})
         
         return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
     
     except Exception:
         return []
 
+# Fungsi untuk mengambil berita menggunakan NewsAPI
+def get_news_api(ticker, api_key):
+    url = f'https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}'
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return []
+        data = response.json()
+        articles = data['articles']
+        news_data = []
+        
+        for article in articles:
+            title = article['title']
+            link = article['url']
+            news_data.append({'title': title, 'link': link, 'source': article['source']['name']})
+        
+        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
+    except Exception as e:
+        return []
+
+# Fungsi untuk analisis sentimen menggunakan TextBlob
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
+# Pengaturan halaman Streamlit
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
 st.title("📈 Analisis Sentimen Saham & Crypto")
 st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
+# Pilih sumber berita (Google News atau NewsAPI)
+news_source = st.selectbox("Pilih sumber berita", ("Google News", "NewsAPI"))
+
+if news_source == "NewsAPI":
+    api_key = st.text_input("Masukkan API Key NewsAPI", "")
+else:
+    api_key = None
+
 if st.button("🔍 Analisis Berita Saham"):
-    yahoo_news = get_news_yahoo(asset_ticker)
+    if news_source == "Google News":
+        yahoo_news = get_news_google(asset_ticker)
+    elif news_source == "NewsAPI" and api_key:
+        yahoo_news = get_news_api(asset_ticker, api_key)
+    else:
+        yahoo_news = []
+
     news_list = yahoo_news 
     
     if not news_list:
@@ -117,6 +150,7 @@ if st.button("🔍 Analisis Berita Saham"):
         hist_fig.update_layout(width=700, height=400)
         st.plotly_chart(hist_fig, use_container_width=False)
 
+# Sidebar petunjuk penggunaan
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
