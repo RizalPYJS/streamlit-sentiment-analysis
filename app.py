@@ -9,7 +9,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-
 load_dotenv()
 
 def get_news_google(ticker):
@@ -35,7 +34,6 @@ def get_news_google(ticker):
     except Exception:
         return []
 
-
 def get_news_api(ticker):
     
     api_key = os.getenv('NEWSAPI_KEY')
@@ -58,7 +56,6 @@ def get_news_api(ticker):
     except Exception as e:
         return []
 
-
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
@@ -69,13 +66,10 @@ st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan 
 
 asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
-
-news_source = st.selectbox("Pilih sumber berita", ("Google News", "NewsAPI"))
+news_source = "NewsAPI" 
 
 if st.button("🔍 Analisis Berita Saham"):
-    if news_source == "Google News":
-        yahoo_news = get_news_google(asset_ticker)
-    elif news_source == "NewsAPI":
+    if news_source == "News":
         yahoo_news = get_news_api(asset_ticker)
     else:
         yahoo_news = []
@@ -147,7 +141,6 @@ if st.button("🔍 Analisis Berita Saham"):
         )
         hist_fig.update_layout(width=700, height=400)
         st.plotly_chart(hist_fig, use_container_width=False)
-
 
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
