@@ -8,7 +8,10 @@ from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-                                                                            
+
+# 🔹 **Pindahkan `st.set_page_config` ke awal sebelum ada `st.` lainnya**
+st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
+
 load_dotenv()
 
 def get_news_yahoo(ticker):
