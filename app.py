@@ -8,7 +8,7 @@ from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-
+                                                                            
 load_dotenv()
 
 def get_news_yahoo(ticker):
@@ -37,6 +37,137 @@ def get_news_yahoo(ticker):
     
     except Exception:
         return []
+
+def get_news_marketwatch(ticker):
+    url = f'https://www.marketwatch.com/investing/stock/{ticker}/news'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_data = []
+        articles = soup.find_all('div', class_='article__content')
+
+        for item in articles:
+            headline = item.find('h3')
+            link = item.find('a', href=True)
+            
+            if headline and link:
+                title = headline.text.strip()
+                news_link = link['href']
+                news_data.append({'title': title, 'link': news_link, 'source': 'MarketWatch'})
+
+        return news_data[:5]
+    
+    except Exception as e:
+        return []
+
+def get_news_cnbc(ticker):
+    url = f'https://www.cnbc.com/quotes/{ticker}'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_data = []
+        articles = soup.find_all('div', class_='Card-titleContainer')
+
+        for item in articles:
+            headline = item.find('a')
+            link = item.find('a', href=True)
+            
+            if headline and link:
+                title = headline.text.strip()
+                news_link = link['href']
+                news_data.append({'title': title, 'link': news_link, 'source': 'CNBC'})
+
+        return news_data[:5]
+    
+    except Exception as e:
+        return []
+
+def get_news_cnbc(ticker):
+    url = f'https://www.cnbc.com/quotes/{ticker}'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_data = []
+        articles = soup.find_all('div', class_='Card-titleContainer')
+
+        for item in articles:
+            headline = item.find('a')
+            link = item.find('a', href=True)
+            
+            if headline and link:
+                title = headline.text.strip()
+                news_link = link['href']
+                news_data.append({'title': title, 'link': news_link, 'source': 'CNBC'})
+
+        return news_data[:5]
+    
+    except Exception as e:
+        return []
+
+def get_news_investing(ticker):
+    url = f'https://www.investing.com/equities/{ticker.lower()}-news'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return []
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        news_data = []
+        articles = soup.find_all('article')
+
+        for item in articles:
+            headline = item.find('a')
+            link = item.find('a', href=True)
+            
+            if headline and link:
+                title = headline.text.strip()
+                news_link = f"https://www.investing.com{link['href']}"
+                news_data.append({'title': title, 'link': news_link, 'source': 'Investing.com'})
+
+        return news_data[:5]
+    
+    except Exception as e:
+        return []
+
+import streamlit as st
+import pandas as pd
+
+st.title("📈 Analisis Sentimen Berita Saham")
+
+asset_ticker = st.text_input("Masukkan Ticker Saham (Contoh: AAPL, TSLA)")
+
+if st.button("🔍 Analisis Berita Saham"):
+    yahoo_news = get_news_yahoo(asset_ticker)
+    marketwatch_news = get_news_marketwatch(asset_ticker)
+    cnbc_news = get_news_cnbc(asset_ticker)
+    investing_news = get_news_investing(asset_ticker)
+
+    news_list = yahoo_news + marketwatch_news + cnbc_news + investing_news
+    
+    if not news_list:
+        st.warning(f"⚠ Tidak ada berita ditemukan untuk {asset_ticker}.")
+    else:
+        df = pd.DataFrame(news_list)
+        
+        st.subheader(f"📊 Hasil Analisis Sentimen Berita untuk {asset_ticker}")
+        st.dataframe(df, width=1000, height=300)
 
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
