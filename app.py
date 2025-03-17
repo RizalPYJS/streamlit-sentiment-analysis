@@ -129,4 +129,4 @@ with col1:
 
 with col2:
     linkedln_url = "https://www.linkedin.com/in/muh-rizal-ardiyansah-941464248/"
-    st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True
+ st.markdown(f'<a href="{linkedln_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>', unsafe_allow_html=True)
