@@ -50,11 +50,6 @@ asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, TSLA, AMZN)", "A
 
 if st.button("🔍 Analisis Berita Saham"):
     yahoo_news = get_news_yahoo(asset_ticker)
-    marketwatch_news = get_news_marketwatch(asset_ticker)
-    cnbc_news = get_news_cnbc(asset_ticker)
-    investing_news = get_news_investing(asset_ticker)
-
-    news_list = yahoo_news + marketwatch_news + cnbc_news + investing_news
     
     if not news_list:
         st.warning(f"⚠ Tidak ada berita yang ditemukan untuk {asset_ticker}. Coba ticker lain.")
