@@ -9,7 +9,6 @@ import plotly.graph_objects as go
 
 load_dotenv()
 
-
 def get_news_api(ticker, api_key):
     url = f'https://newsapi.org/v2/everything?q={ticker}&apiKey={api_key}'
     try:
@@ -25,15 +24,20 @@ def get_news_api(ticker, api_key):
             link = article['url']
             news_data.append({'title': title, 'link': link, 'source': article['source']['name']})
         
-        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
+        return news_data[:20] if news_data else []  
     except Exception as e:
         return []
 
-# Fungsi untuk analisis sentimen menggunakan TextBlob
 def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
-# Fungsi untuk memberikan respons chatbot berdasarkan sentimen
+
+def hide_frontend():
+    st.markdown(
+        "<style> .hidden-text { display: none; } </style>", unsafe_allow_html=True
+    )
+    st.markdown('<div class="hidden-text">Ini adalah teks yang disembunyikan di frontend tetapi terlihat di backend</div>', unsafe_allow_html=True)
+
 def sentiment_response(sentiment):
     if sentiment > 0.1:
         return "🎉 Sentimen positif! Berita ini menunjukkan bahwa banyak orang merasa optimis tentang perkembangan terbaru. Bisa jadi ini pertanda baik untuk aset tersebut!"
@@ -41,15 +45,6 @@ def sentiment_response(sentiment):
         return "⚠️ Sentimen negatif. Banyak orang merasa khawatir atau pesimis tentang perkembangan terbaru. Anda mungkin ingin lebih berhati-hati sebelum membuat keputusan."
     else:
         return "🤔 Sentimen netral. Berita ini cenderung obyektif, tanpa ada pengaruh besar baik dari sisi positif maupun negatif. Tidak ada perubahan signifikan yang dapat diharapkan."
-
-
-def categorize_sentiment(score):
-    if score > 0.1:
-        return 'Positif'
-    elif score < -0.1:
-        return 'Negatif'
-    else:
-        return 'Netral'
 
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
@@ -83,23 +78,19 @@ if st.button("🔍 Analisis Berita Saham"):
         
         df = pd.DataFrame(sentiments)
         
-        
-        average_sentiment = df['sentiment'].mean()
-        
-       
-        overall_sentiment = categorize_sentiment(average_sentiment)
-        
-        
-        backend_text = f"Data berita dan analisis sentimen telah diproses. Rata-rata sentimen: {average_sentiment}, Kategori: {overall_sentiment}"
-        st.text(backend_text)  
-        
         st.subheader(f"📊 Hasil Analisis Sentimen Berita untuk {asset_ticker}")
         st.dataframe(df, width=1000, height=300)
         
-        st.subheader("Distribusi Sentimen untuk Semua Berita")
-        st.write(f"**Sentimen Keseluruhan**: {overall_sentiment}")
-        st.write(sentiment_response(average_sentiment))
-
+        def categorize_sentiment(score):
+            if score > 0.1:
+                return 'Positif'
+            elif score < -0.1:
+                return 'Negatif'
+            else:
+                return 'Netral'
+        
+        df['kategori'] = df['sentiment'].apply(categorize_sentiment)
+        
         col1, col2 = st.columns(2)
         
         with col1:
@@ -139,9 +130,12 @@ if st.button("🔍 Analisis Berita Saham"):
         hist_fig.update_layout(width=700, height=400)
         st.plotly_chart(hist_fig, use_container_width=False)
 
-        
-        st.write(f"**Sentimen Keseluruhan**: {overall_sentiment}")
-        st.write(f"**Penjelasan Chatbot:** {sentiment_response(average_sentiment)}")
+      
+        for index, row in df.iterrows():
+            st.write(f"**Berita:** {row['title']}")
+            st.write(f"**Sentimen:** {row['kategori']}")
+            st.write(f"**Penjelasan Chatbot:** {row['sentiment_explanation']}")
+
 
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
 st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
@@ -159,4 +153,3 @@ with col2:
         f'<a href="{linkedln_url}" target="_blank">'
         f'<img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="30"></a>',
         unsafe_allow_html=True
-    )
