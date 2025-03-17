@@ -42,10 +42,10 @@ def analyze_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
 st.set_page_config(page_title="Analisis Sentimen Saham & Crypto", layout="wide")
-st.title("📈 Analisis Sentimen & Prediksi Saham & Crypto")
+st.title("📈 Analisis Sentimen Saham & Crypto")
 st.write("Masukkan kode aset untuk melihat analisis sentimen berita terbaru dan prediksi harga.")
 
-asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTCUSDT, ETHUSDT)", "AAPL").upper()
+asset_ticker = st.text_input("Masukkan kode aset (contoh: AAPL, BTC, ETH)", "AAPL").upper()
 
 if st.button("🔍 Analisis Berita Saham"):
     yahoo_news = get_news_yahoo(asset_ticker)
@@ -118,10 +118,10 @@ if st.button("🔍 Analisis Berita Saham"):
         st.plotly_chart(hist_fig, use_container_width=False)
 
 st.sidebar.header("ℹ️ Petunjuk Penggunaan")
-st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, BTCUSDT, ETHUSDT).")
+st.sidebar.write("1️⃣ Masukkan kode aset (misal: AAPL, TSLA, BTC).")
 st.sidebar.write("2️⃣ Klik tombol '🔍 Analisis Berita Saham'.")
 st.sidebar.write("3️⃣ Lihat tabel berita, grafik sentimen, dan data harga (jika berlaku).")
-
+st.sidebar.write("Data Dari IHSG & Crypto masih sangat terbatas dikarenakan terbatas API")
 col1, col2 = st.columns([0.8, 0.2])
 
 with col1:
