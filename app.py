@@ -8,7 +8,7 @@ from textblob import TextBlob
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-                                                                            
+
 load_dotenv()
 
 def get_news_yahoo(ticker):
@@ -33,7 +33,7 @@ def get_news_yahoo(ticker):
                 news_link = f"https://finance.yahoo.com{link['href']}"
                 news_data.append({'title': title, 'link': news_link, 'source': 'Yahoo Finance'})
         
-        return news_data[:20] if news_data else []
+        return news_data[:20] if news_data else []  # Ambil 20 berita terbaru
     
     except Exception:
         return []
